@@ -20,11 +20,10 @@ class Spotify_Model:
         }
         response = requests.post(url, headers=headers, data=payload)
         response.raise_for_status()
-        print(response.status_code)
         json_response = response.json()
         return json_response['access_token']
     
-    def search(self, category: str, query: str):
+    def query(self, category: str, query: str):
         if category not in self.SEARCH_CATEGORIES:
             logging.error("ERROR: An invalid search category, {}, was provided.".format(category))
             return
@@ -35,3 +34,25 @@ class Spotify_Model:
         response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
         return response.json()
+
+    def query_artists(self, query: str):
+        access_token = self._gen_access_token()
+        url = 'https://api.spotify.com/v1/search'
+        headers={ 'authorization': f'Bearer {access_token}'}
+        params={ 'q': query, 'type': 'artist' }
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        response_items = response.json()['artists']['items']
+        results = []
+        for item in response_items:
+            id, name, genres, popularity, followers, images = item['id'], item['name'], item['genres'], item['popularity'], item['followers']['total'], item['images']
+            record = {
+                'id': id,
+                'name': name,
+                'genres': genres,
+                'popularity': popularity,
+                'followers': followers,
+                'images': images
+            }
+            results.append(record)
+        return results
